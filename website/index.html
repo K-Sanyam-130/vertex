@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vertex | 3D Version Control for Blender</title>
+    <meta name="description" content="Git-powered spatial version control, collaboration, and time-travel for Blender 3D projects.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- GITHUB AUTHENTICATION OVERLAY -->
+    <div id="gh-auth-overlay" class="gh-auth-overlay">
+      <div class="gh-auth-card">
+        <div class="gh-icon"><span class="material-symbols-outlined" style="font-size:32px;">code_blocks</span></div>
+        <h2 style="font-size: 1.8rem; margin-bottom: 0.5rem; color: var(--on-surface);">Connect to Vertex</h2>
+        <p style="color: var(--on-surface-variant); margin-bottom: 2rem;">Sign in with your GitHub account to securely track your 3D contributions and collaborate with your team.</p>
+        <div class="p-group" style="text-align: left;">
+          <input type="text" id="gh-username" class="p-input" placeholder="GitHub Username (e.g. sanyam)" onkeydown="if(event.key==='Enter') connectGitHub()">
+        </div>
+        <button class="p-btn" onclick="connectGitHub()" id="btn-gh-connect" style="width:100%; justify-content:center; gap:8px;">
+          <svg height="20" viewBox="0 0 16 16" width="20" fill="currentColor"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path></svg>
+          Continue with GitHub
+        </button>
+        <div id="gh-err" style="color:var(--error); margin-top:12px; font-size:0.9rem;"></div>
+      </div>
+    </div>
+
+    <!-- ═══ Top Navigation ═══ -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-brand">VERTEX</div>
+        <div class="nav-links">
+            <a href="#hero" class="nav-link">Home</a>
+            <a href="#features" class="nav-link">Features</a>
+            <a href="#" class="nav-link" onclick="showPanel('viewer'); return false;">Viewer</a>
+            <a href="#" class="nav-link" onclick="showPanel('history'); return false;">Activity</a>
+            <a href="#" class="nav-link" onclick="showPanel('setup'); return false;">Settings</a>
+        </div>
+        <div class="nav-actions">
+            <button class="nav-icon" onclick="showPanel('history')">
+                <span class="material-symbols-outlined">notifications</span>
+            </button>
+            <button class="nav-icon" onclick="showPanel('setup')">
+                <span class="material-symbols-outlined">settings</span>
+            </button>
+            <button class="nav-commit-btn" onclick="showPanel('sync')">Commit & Push</button>
+        </div>
+    </nav>
+
+    <!-- ═══ Hero Section ═══ -->
+    <main class="hero-section" id="hero">
+        <div class="hero-grid">
+
+            <!-- Left: Value Proposition -->
+            <div class="hero-left">
+                <div class="version-badge">
+                    <span class="badge-dot"></span>
+                    <span>Production Ready v1.0</span>
+                </div>
+
+                <h1 class="hero-title">
+                    A more human <br>
+                    <span class="gradient-text">way to work</span> <br>
+                    in Blender.
+                </h1>
+
+                <p class="hero-desc">
+                    The precision of Git meets the spatial intuition of 3D artistry.
+                    Track every vertex, merge every scene, and collaborate without friction.
+                </p>
+
+                <!-- Feature Bento Cards -->
+                <div class="bento-grid">
+                    <div class="bento-card" onclick="showPanel('sync')">
+                        <span class="material-symbols-outlined bento-icon icon-primary">sync</span>
+                        <h3 class="bento-title">Real-time Syncing</h3>
+                        <p class="bento-desc">Serialize → commit → push in one command. Direct Blender integration.</p>
+                    </div>
+                    <div class="bento-card" onclick="showPanel('merge')">
+                        <span class="material-symbols-outlined bento-icon icon-tertiary">call_split</span>
+                        <h3 class="bento-title">3-Way Visual Merge</h3>
+                        <p class="bento-desc">Resolve conflicts spatially with union or Git-style 3-way merge.</p>
+                    </div>
+                    <div class="bento-card bento-wide" onclick="showPanel('diff')">
+                        <div class="bento-wide-inner">
+                            <div class="bento-icon-box">
+                                <span class="material-symbols-outlined icon-secondary">visibility</span>
+                            </div>
+                            <div>
+                                <h3 class="bento-title">Ghost Blocks</h3>
+                                <p class="bento-desc">See where objects were N minutes ago as transparent wireframe ghosts for visual time-travel.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Dashboard Card -->
+            <div class="hero-right">
+                <div class="glass-card login-card">
+                    <div class="card-glow"></div>
+
+                    <div class="card-header-center">
+                        <h2 class="card-title">Command Center</h2>
+                        <p class="card-subtitle">Select an operation to generate the Blender command.</p>
+                    </div>
+
+                    <div class="card-actions">
+                        <button class="btn-github" onclick="window.open('https://github.com/K-Sanyam-130/vertex','_blank')">
+                            <svg class="gh-icon" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.43.372.82 1.102.82 2.222 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                            <span>View on GitHub</span>
+                        </button>
+                    </div>
+
+                    <!-- Quick Launch Buttons -->
+                    <div class="quick-launch">
+                        <button class="ql-btn" onclick="showPanel('serialize')">
+                            <span class="material-symbols-outlined">inventory_2</span>
+                            <span>Serialize</span>
+                        </button>
+                        <button class="ql-btn" onclick="showPanel('restore')">
+                            <span class="material-symbols-outlined">history</span>
+                            <span>Restore</span>
+                        </button>
+                        <button class="ql-btn" onclick="showPanel('merge')">
+                            <span class="material-symbols-outlined">call_merge</span>
+                            <span>Merge</span>
+                        </button>
+                        <button class="ql-btn" onclick="showPanel('diff')">
+                            <span class="material-symbols-outlined">compare</span>
+                            <span>Ghost Diff</span>
+                        </button>
+                        <button class="ql-btn" onclick="showPanel('branch')">
+                            <span class="material-symbols-outlined">account_tree</span>
+                            <span>Branch</span>
+                        </button>
+                        <button class="ql-btn" onclick="showPanel('sync')">
+                            <span class="material-symbols-outlined">cloud_upload</span>
+                            <span>Sync</span>
+                        </button>
+                    </div>
+
+                    <div class="card-footer">
+                        <div class="card-footer-row">
+                            <a href="#" onclick="showPanel('setup'); return false;" class="footer-link">⚙️ Settings</a>
+                            <a href="#" onclick="showPanel('viewer'); return false;" class="footer-link">📊 JSON Viewer</a>
+                        </div>
+                    </div>
+
+                    <div class="card-ambient"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scroll Indicator -->
+        <div class="scroll-indicator">
+            <span class="material-symbols-outlined">keyboard_double_arrow_down</span>
+        </div>
+    </main>
+
+    <!-- ═══ Feature Showcase ═══ -->
+    <section class="features-section" id="features">
+        <div class="features-grid">
+
+            <!-- Data Density -->
+            <div class="feature-block">
+                <div class="feature-preview">
+                    <div class="preview-header">
+                        <span class="preview-label">Local Changes</span>
+                        <span class="preview-stat">3 Modified</span>
+                    </div>
+                    <div class="preview-body">
+                        <div class="file-row">
+                            <div class="file-info">
+                                <span class="material-symbols-outlined file-dot dot-secondary">circle</span>
+                                <span>Scene_HighPoly.blend</span>
+                            </div>
+                            <span class="file-delta delta-secondary">+2,431 Δ</span>
+                        </div>
+                        <div class="file-row">
+                            <div class="file-info">
+                                <span class="material-symbols-outlined file-dot dot-tertiary">add_circle</span>
+                                <span>spatial.json</span>
+                            </div>
+                            <span class="file-delta delta-tertiary">NEW</span>
+                        </div>
+                        <div class="file-row">
+                            <div class="file-info">
+                                <span class="material-symbols-outlined file-dot dot-primary">sync</span>
+                                <span>history/v014.json</span>
+                            </div>
+                            <span class="file-delta delta-primary">SNAPSHOT</span>
+                        </div>
+                        <div class="skeleton-lines">
+                            <div class="skeleton-line" style="width:100%"></div>
+                            <div class="skeleton-line" style="width:66%"></div>
+                            <div class="skeleton-line" style="width:75%"></div>
+                        </div>
+                    </div>
+                </div>
+                <h4 class="feature-title">Granular Precision</h4>
+                <p class="feature-desc">We serialize .blend files to structured JSON — tracking every object's location, rotation, scale, and who changed it.</p>
+            </div>
+
+            <!-- Visual Comparison -->
+            <div class="feature-block">
+                <div class="feature-preview preview-split">
+                    <img src="engine-preview.png" alt="3D Engine Preview" class="split-image">
+                    <div class="split-line"></div>
+                    <div class="split-labels">
+                        <span class="split-label label-old">REV_402</span>
+                        <span class="split-label label-new">CURRENT</span>
+                    </div>
+                </div>
+                <h4 class="feature-title">Spatial Diffs</h4>
+                <p class="feature-desc">Scrub through history visually. See object movements, additions, and deletions as color-coded ghost wireframes.</p>
+            </div>
+
+            <!-- Distributed Flow -->
+            <div class="feature-block">
+                <div class="feature-preview preview-nodes">
+                    <div class="node-glow"></div>
+                    <div class="node-grid">
+                        <div class="node-box">
+                            <span class="material-symbols-outlined">computer</span>
+                        </div>
+                        <div class="node-box">
+                            <span class="material-symbols-outlined">cloud</span>
+                        </div>
+                        <div class="node-box">
+                            <span class="material-symbols-outlined">terminal</span>
+                        </div>
+                        <div class="node-box node-active">
+                            <span class="material-symbols-outlined">bolt</span>
+                        </div>
+                    </div>
+                </div>
+                <h4 class="feature-title">Git-Native Architecture</h4>
+                <p class="feature-desc">Built on Git and Python. Branch, merge, push, pull — all from Blender's CLI. Your repo, your rules.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ Footer ═══ -->
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <span class="footer-logo">VERTEX</span>
+                <p class="footer-copy">© 2026 Spatial Version Control for Blender</p>
+            </div>
+            <div class="footer-columns">
+                <div class="footer-col">
+                    <span class="footer-col-title">Product</span>
+                    <a href="#" onclick="showPanel('serialize'); return false;">Serialize</a>
+                    <a href="#" onclick="showPanel('merge'); return false;">Merge</a>
+                    <a href="#" onclick="showPanel('diff'); return false;">Ghost Diff</a>
+                </div>
+                <div class="footer-col">
+                    <span class="footer-col-title">Tools</span>
+                    <a href="#" onclick="showPanel('restore'); return false;">Restore</a>
+                    <a href="#" onclick="showPanel('branch'); return false;">Branch</a>
+                    <a href="#" onclick="showPanel('sync'); return false;">Sync</a>
+                </div>
+                <div class="footer-col">
+                    <span class="footer-col-title">Connect</span>
+                    <a href="https://github.com/K-Sanyam-130/vertex" target="_blank">GitHub</a>
+                    <a href="#" onclick="showPanel('viewer'); return false;">JSON Viewer</a>
+                    <a href="#" onclick="showPanel('history'); return false;">History</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ═══ Slide-in Panel ═══ -->
+    <div class="panel-overlay" id="panelOverlay" onclick="hidePanel()"></div>
+    <div class="panel" id="panel">
+        <button class="panel-close" onclick="hidePanel()">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        <div class="panel-inner" id="panelContent"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

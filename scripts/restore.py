@@ -900,6 +900,8 @@ def full_restore(snapshot_path, data_dir, current_path):
 # Main
 # ══════════════════════════════════════════════════════════════════════════════
 
+import argparse
+
 def main():
     base_dir = (
         os.path.dirname(bpy.data.filepath) if bpy.data.filepath else os.getcwd()

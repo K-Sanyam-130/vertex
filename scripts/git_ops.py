@@ -68,6 +68,44 @@ def restore(commit_hash, cwd=None):
     return output
 
 
+def push(remote="origin", branch=None, cwd=None):
+    """Push committed changes to the remote repository.
+
+    Args:
+        remote: Remote name (default: 'origin').
+        branch: Branch name (default: current branch).
+        cwd: Working directory for the git command.
+
+    Returns:
+        str: Git stdout output.
+    """
+    args = ["push", remote]
+    if branch:
+        args.append(branch)
+    output = _run(args, cwd=cwd)
+    print(f"[Vertex] Pushed to {remote}" + (f"/{branch}" if branch else ""))
+    return output
+
+
+def pull(remote="origin", branch=None, cwd=None):
+    """Pull latest changes from the remote repository.
+
+    Args:
+        remote: Remote name (default: 'origin').
+        branch: Branch name (default: current branch).
+        cwd: Working directory for the git command.
+
+    Returns:
+        str: Git stdout output.
+    """
+    args = ["pull", remote]
+    if branch:
+        args.append(branch)
+    output = _run(args, cwd=cwd)
+    print(f"[Vertex] Pulled from {remote}" + (f"/{branch}" if branch else ""))
+    return output
+
+
 if __name__ == "__main__":
     # Quick manual test — run from the repo root
     snapshot()
