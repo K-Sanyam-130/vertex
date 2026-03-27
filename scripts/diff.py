@@ -1,125 +1,268 @@
 """
-diff.py — Vertex Visual Diff ("Ghosts")
+diff.py — Vertex Visual Diff with Time-Travel ("Ghost Blocks")
 
-Compares the live Blender scene against the last saved data/spatial.json.
-Changed or removed objects are visualized as semi-transparent green
-wireframe "ghosts" so artists can see exactly what moved.
+Compares the live Blender scene against a previous state and creates
+semi-transparent wireframe "ghosts" at old positions.
 
-Run inside Blender:
+Usage:
+    # Compare against latest spatial.json:
     blender yourfile.blend --python scripts/diff.py
-Or from Blender's Script Editor / Python console.
+
+    # Compare against a specific version:
+    blender yourfile.blend --python scripts/diff.py -- --version 3
+
+    # Compare against state from ~N minutes ago:
+    blender yourfile.blend --python scripts/diff.py -- --ago 10
+
+    # Clear all ghost overlays:
+    blender yourfile.blend --python scripts/diff.py -- --clear
 """
 
 import bpy
 import json
 import os
-import math
+import sys
+import glob
+from datetime import datetime, timedelta
 
-# Visual style for ghost overlays
+# ── Visual style ──────────────────────────────────────────────────────
 GHOST_PREFIX = "_ghost_"
-GHOST_COLOR = (0, 1, 0, 0.5)          # green, 50 % opacity
-GHOST_DISPLAY = "WIRE"
-POSITION_TOLERANCE = 1e-4              # ignore floating-point noise
+COLOR_MOVED   = (0, 1, 0, 0.4)        # green  — object moved
+COLOR_REMOVED = (1, 0, 0, 0.4)        # red    — object was removed
+COLOR_ADDED   = (1, 1, 0, 0.4)        # yellow — object was added since
+POSITION_TOLERANCE = 1e-4
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────
+# ── Parse args ────────────────────────────────────────────────────────
+def parse_args():
+    argv = sys.argv
+    if "--" in argv:
+        script_args = argv[argv.index("--") + 1:]
+    else:
+        script_args = []
 
-def _load_previous_state(filepath):
-    """Load the last serialized spatial.json."""
+    version = None
+    ago = None
+    clear = False
+
+    i = 0
+    while i < len(script_args):
+        if script_args[i] == "--version" and i + 1 < len(script_args):
+            version = int(script_args[i + 1])
+            i += 2
+        elif script_args[i] == "--ago" and i + 1 < len(script_args):
+            ago = int(script_args[i + 1])
+            i += 2
+        elif script_args[i] == "--clear":
+            clear = True
+            i += 1
+        else:
+            i += 1
+
+    return version, ago, clear
+
+
+# ── Helpers ───────────────────────────────────────────────────────────
+def load_json(filepath):
     if not os.path.isfile(filepath):
-        raise FileNotFoundError(f"No previous state found: {filepath}")
+        raise FileNotFoundError(f"No data found: {filepath}")
     with open(filepath, "r", encoding="utf-8") as f:
-        return {entry["name"]: entry for entry in json.load(f)}
+        return json.load(f)
 
 
-def _vectors_differ(a, b):
-    """Return True if two 3-component lists differ beyond tolerance."""
+def vectors_differ(a, b):
     return any(abs(x - y) > POSITION_TOLERANCE for x, y in zip(a, b))
 
 
-def _has_changed(obj, prev):
-    """Compare a live object's transforms against its previous JSON entry."""
-    if _vectors_differ(list(obj.location), prev["loc"]):
+def has_changed(obj, prev):
+    if vectors_differ(list(obj.location), prev["loc"]):
         return True
-    if _vectors_differ(list(obj.rotation_euler), prev["rot"]):
+    if vectors_differ(list(obj.rotation_euler), prev["rot"]):
         return True
-    if _vectors_differ(list(obj.scale), prev["scale"]):
+    if vectors_differ(list(obj.scale), prev["scale"]):
         return True
     return False
 
 
-# ── Ghost management ────────────────────────────────────────────────────
+# ── Version discovery ─────────────────────────────────────────────────
+def get_versions(history_dir):
+    """Return sorted list of (ver_num, timestamp_str, datetime_obj, filepath)."""
+    files = sorted(glob.glob(os.path.join(history_dir, "v*.json")))
+    entries = []
+    for f in files:
+        basename = os.path.basename(f)
+        try:
+            parts = basename.replace(".json", "").split("_", 1)
+            ver_num = int(parts[0][1:])
+            rest = parts[1] if len(parts) > 1 else ""
+            # Strip merge_ prefix for timestamp parsing
+            ts_str = rest.replace("merge_", "")
+            # Parse timestamp: "2026-03-27_23-15-03" → datetime
+            dt = datetime.strptime(ts_str, "%Y-%m-%d_%H-%M-%S")
+            entries.append((ver_num, rest, dt, f))
+        except (ValueError, IndexError):
+            continue
+    return entries
 
+
+def find_version_file(history_dir, version):
+    """Find history file by version number."""
+    for ver_num, _, _, filepath in get_versions(history_dir):
+        if ver_num == version:
+            return filepath
+    return None
+
+
+def find_closest_ago(history_dir, minutes_ago):
+    """Find the snapshot closest to N minutes ago."""
+    target_time = datetime.now() - timedelta(minutes=minutes_ago)
+    versions = get_versions(history_dir)
+    if not versions:
+        return None
+
+    best = None
+    best_diff = None
+    for ver_num, ts_str, dt, filepath in versions:
+        diff = abs((dt - target_time).total_seconds())
+        if best_diff is None or diff < best_diff:
+            best_diff = diff
+            best = (ver_num, ts_str, filepath)
+
+    return best
+
+
+# ── Ghost management ──────────────────────────────────────────────────
 def clear_ghosts():
     """Remove all existing ghost overlays from the scene."""
     ghosts = [obj for obj in bpy.data.objects if obj.name.startswith(GHOST_PREFIX)]
     for ghost in ghosts:
         bpy.data.objects.remove(ghost, do_unlink=True)
+    return len(ghosts)
 
 
-def _create_ghost(name, entry):
-    """Create a wireframe ghost at the *previous* position of an object."""
-    mesh = bpy.data.meshes.new(GHOST_PREFIX + name + "_mesh")
-    ghost = bpy.data.objects.new(GHOST_PREFIX + name, mesh)
-    bpy.context.collection.objects.link(ghost)
+def create_ghost(name, entry, color, label=""):
+    """Create a wireframe ghost at a previous position."""
+    # Use a cube mesh as the ghost shape
+    bpy.ops.mesh.primitive_cube_add()
+    ghost = bpy.context.active_object
+    ghost.name = GHOST_PREFIX + name
 
-    # Place ghost at the old transforms
+    # Place at old transforms
     ghost.location = entry["loc"]
     ghost.rotation_euler = entry["rot"]
     ghost.scale = entry["scale"]
 
-    # Visual style — wireframe + color
-    ghost.display_type = GHOST_DISPLAY
-    ghost.color = GHOST_COLOR
+    # Visual style
+    ghost.display_type = "WIRE"
+    ghost.color = color
     ghost.show_wire = True
-
-    # Prevent accidental selection / editing
     ghost.hide_select = True
+
+    # Add label as custom property (visible in properties panel)
+    ghost["ghost_type"] = label
+    if "modified_by" in entry:
+        ghost["last_modified_by"] = entry["modified_by"]
+    if "modified_at" in entry:
+        ghost["last_modified_at"] = entry["modified_at"]
 
     return ghost
 
 
-# ── Main ────────────────────────────────────────────────────────────────
-
+# ── Main ──────────────────────────────────────────────────────────────
 def main():
-    """Entry point — diff current scene against spatial.json."""
+    version, ago, clear_flag = parse_args()
     base_dir = os.path.dirname(bpy.data.filepath) if bpy.data.filepath else os.getcwd()
     json_path = os.path.join(base_dir, "data", "spatial.json")
+    history_dir = os.path.join(base_dir, "data", "history")
 
-    previous = _load_previous_state(json_path)
+    # Clear mode
+    if clear_flag:
+        count = clear_ghosts()
+        print(f"[Vertex] 🧹 Removed {count} ghost(s)")
+        return
 
-    # Clean up any ghosts from a previous diff
+    # Always clear old ghosts first
     clear_ghosts()
+
+    # ── Determine which snapshot to compare against ──
+    compare_path = None
+    compare_label = ""
+
+    if ago is not None:
+        result = find_closest_ago(history_dir, ago)
+        if result:
+            ver_num, ts_str, filepath = result
+            compare_path = filepath
+            compare_label = f"~{ago}min ago (v{ver_num})"
+            print(f"[Vertex] 👻 Comparing against v{ver_num} ({ts_str}) — ~{ago} minutes ago")
+        else:
+            print(f"[Vertex] ❌ No snapshots found in history")
+            return
+    elif version is not None:
+        compare_path = find_version_file(history_dir, version)
+        if compare_path:
+            compare_label = f"v{version}"
+            print(f"[Vertex] 👻 Comparing against version {version}")
+        else:
+            print(f"[Vertex] ❌ Version {version} not found")
+            return
+    else:
+        compare_path = json_path
+        compare_label = "last saved"
+        print(f"[Vertex] 👻 Comparing against last saved state")
+
+    # ── Load previous state ──
+    previous_data = load_json(compare_path)
+    previous = {entry["name"]: entry for entry in previous_data}
 
     changed = []
     removed = []
+    added = []
 
-    # Detect changed objects
+    # Detect changed objects (in scene and in previous)
     for obj in bpy.data.objects:
         if obj.name.startswith(GHOST_PREFIX):
             continue
         prev = previous.get(obj.name)
-        if prev and _has_changed(obj, prev):
-            _create_ghost(obj.name, prev)
+        if prev and has_changed(obj, prev):
+            create_ghost(obj.name, prev, COLOR_MOVED, f"moved since {compare_label}")
             changed.append(obj.name)
 
-    # Detect removed objects (in JSON but no longer in scene)
+    # Detect removed objects (in previous but not in scene)
     scene_names = {obj.name for obj in bpy.data.objects if not obj.name.startswith(GHOST_PREFIX)}
     for name, entry in previous.items():
         if name not in scene_names:
-            _create_ghost(name, entry)
+            create_ghost(name, entry, COLOR_REMOVED, f"removed since {compare_label}")
             removed.append(name)
 
-    # Summary
-    total = len(changed) + len(removed)
+    # Detect added objects (in scene but not in previous)
+    for obj in bpy.data.objects:
+        if obj.name.startswith(GHOST_PREFIX):
+            continue
+        if obj.name not in previous:
+            added.append(obj.name)
+
+    # ── Summary ──
+    total = len(changed) + len(removed) + len(added)
     if total == 0:
-        print("[Vertex] Diff — no spatial changes detected.")
+        print(f"[Vertex] ✔ No changes detected since {compare_label}")
     else:
-        print(f"[Vertex] Diff — {total} change(s) found:")
+        print(f"\n[Vertex] 📊 Diff against {compare_label} — {total} change(s):\n")
         for n in changed:
-            print(f"  ✎ modified: {n}")
+            user_info = ""
+            prev = previous.get(n)
+            if prev and "modified_by" in prev:
+                user_info = f" (was by {prev['modified_by']})"
+            print(f"  🟢 moved:   {n}{user_info}")
         for n in removed:
-            print(f"  ✖ removed:  {n}")
+            user_info = ""
+            prev = previous.get(n)
+            if prev and "modified_by" in prev:
+                user_info = f" (by {prev['modified_by']})"
+            print(f"  🔴 removed: {n}{user_info}")
+        for n in added:
+            print(f"  🟡 added:   {n}")
+        print()
 
 
 if __name__ == "__main__":

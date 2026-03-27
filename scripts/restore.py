@@ -175,7 +175,22 @@ def restore_from(snapshot_path, current_path):
 # Main
 # ══════════════════════════════════════════════════════════════════════════════
 
+import argparse
+
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--version", type=int, help="Version number to restore")
+    
+    # In blender, args after '--' are for the script
+    import sys
+    argv = sys.argv
+    if '--' in argv:
+        argv = argv[argv.index('--') + 1:]
+    else:
+        argv = []
+        
+    args, _ = parser.parse_known_args(argv)
+
     base_dir = os.path.dirname(bpy.data.filepath) if bpy.data.filepath else os.getcwd()
     history_dir = os.path.join(base_dir, "data", "history")
     current_path = os.path.join(base_dir, "data", "spatial.json")
@@ -188,29 +203,32 @@ def main():
         return
 
     # --- Only 1 version: restore it directly ---
-    if len(versions) == 1:
+    if len(versions) == 1 and not args.version:
         ver_num, timestamp, is_merge, filepath = versions[0]
         tag = " [MERGE]" if is_merge else ""
         print(f"[Vertex] Only one snapshot available (v{ver_num}{tag} — {timestamp}), restoring...")
         restore_from(filepath, current_path)
         return
 
-    # --- Multiple versions: let user pick ---
-    print(f"\n[Vertex] 📋 Available versions ({len(versions)} snapshots):\n")
-    print(f"  {'#':<6} {'Type':<10} {'Timestamp':<25}")
-    print(f"  {'---':<6} {'---':<10} {'---':<25}")
+    if args.version:
+        chosen_ver = args.version
+    else:
+        # --- Multiple versions: let user pick (Interactive) ---
+        print(f"\n[Vertex] 📋 Available versions ({len(versions)} snapshots):\n")
+        print(f"  {'#':<6} {'Type':<10} {'Timestamp':<25}")
+        print(f"  {'---':<6} {'---':<10} {'---':<25}")
 
-    for ver_num, timestamp, is_merge, _ in versions:
-        tag = "[MERGE]" if is_merge else ""
-        print(f"  v{ver_num:<5} {tag:<10} {timestamp}")
+        for ver_num, timestamp, is_merge, _ in versions:
+            tag = "[MERGE]" if is_merge else ""
+            print(f"  v{ver_num:<5} {tag:<10} {timestamp}")
 
-    print()
-    try:
-        choice = input("[Vertex] Enter version number to restore (e.g. 1): ").strip()
-        chosen_ver = int(choice)
-    except (ValueError, EOFError):
-        print("[Vertex] ❌ Invalid input. Aborting.")
-        return
+        print()
+        try:
+            choice = input("[Vertex] Enter version number to restore (e.g. 1): ").strip()
+            chosen_ver = int(choice)
+        except (ValueError, EOFError):
+            print("[Vertex] ❌ Invalid input or non-interactive environment. Aborting.")
+            return
 
     # Find the chosen version
     match = None
