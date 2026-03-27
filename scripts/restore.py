@@ -5,6 +5,8 @@ Reverts the Blender scene to a previously serialized version.
 
 - If only 1 snapshot exists  → restores it directly
 - If multiple snapshots exist → lists them and asks user to pick
+- Creates correct object types (camera, light, cone, etc.)
+- Preserves attribution metadata (modified_by, modified_at)
 
 Run inside Blender:
     blender --background file.blend --python scripts/restore.py
@@ -17,9 +19,10 @@ import glob
 import shutil
 
 
-# -------------------------------
-# 🔹 Load JSON
-# -------------------------------
+# ══════════════════════════════════════════════════════════════════════════════
+# JSON I/O
+# ══════════════════════════════════════════════════════════════════════════════
+
 def load_json(filepath):
     if not os.path.isfile(filepath):
         raise FileNotFoundError(f"Spatial data not found: {filepath}")
@@ -27,9 +30,73 @@ def load_json(filepath):
         return json.load(f)
 
 
-# -------------------------------
-# 🔹 Delete extra objects
-# -------------------------------
+# ══════════════════════════════════════════════════════════════════════════════
+# Scene helpers (matching merge.py primitives)
+# ══════════════════════════════════════════════════════════════════════════════
+
+_PRIMITIVE_KEYWORDS = [
+    ("cylinder",  "mesh.primitive_cylinder_add"),
+    ("sphere",    "mesh.primitive_uv_sphere_add"),
+    ("ico",       "mesh.primitive_ico_sphere_add"),
+    ("plane",     "mesh.primitive_plane_add"),
+    ("cone",      "mesh.primitive_cone_add"),
+    ("torus",     "mesh.primitive_torus_add"),
+    ("circle",    "mesh.primitive_circle_add"),
+    ("grid",      "mesh.primitive_grid_add"),
+    ("monkey",    "mesh.primitive_monkey_add"),
+    ("cube",      "mesh.primitive_cube_add"),
+]
+
+
+def _add_primitive(name):
+    """Add correct object type based on the name."""
+    key = name.lower()
+
+    # Camera
+    if "camera" in key:
+        cam_data = bpy.data.cameras.new(name + "_data")
+        obj = bpy.data.objects.new(name, cam_data)
+        bpy.context.collection.objects.link(obj)
+        return obj
+
+    # Light
+    if "light" in key:
+        light_data = bpy.data.lights.new(name + "_data", type="POINT")
+        obj = bpy.data.objects.new(name, light_data)
+        bpy.context.collection.objects.link(obj)
+        return obj
+
+    # Mesh primitives
+    op_path = "mesh.primitive_cube_add"
+    for keyword, path in _PRIMITIVE_KEYWORDS:
+        if keyword in key:
+            op_path = path
+            break
+
+    module, op_name = op_path.split(".")
+    getattr(getattr(bpy.ops, module), op_name)()
+    obj = bpy.context.active_object
+    obj.name = name
+    if obj.data:
+        obj.data.name = name + "_mesh"
+    return obj
+
+
+def get_or_create_object(name):
+    """Return existing object or create correct primitive type."""
+    obj = bpy.data.objects.get(name)
+    if obj is not None:
+        return obj, False
+    obj = _add_primitive(name)
+    return obj, True
+
+
+def apply_transforms(obj, entry):
+    obj.location       = entry["loc"]
+    obj.rotation_euler = entry["rot"]
+    obj.scale          = entry["scale"]
+
+
 def cleanup_scene(valid_names):
     """Remove objects not present in JSON data."""
     for obj in list(bpy.data.objects):
@@ -37,31 +104,10 @@ def cleanup_scene(valid_names):
             bpy.data.objects.remove(obj, do_unlink=True)
 
 
-# -------------------------------
-# 🔹 Get or create object
-# -------------------------------
-def get_or_create_object(name):
-    obj = bpy.data.objects.get(name)
-    if obj:
-        return obj
-    bpy.ops.mesh.primitive_cube_add()
-    obj = bpy.context.active_object
-    obj.name = name
-    return obj
+# ══════════════════════════════════════════════════════════════════════════════
+# Version discovery (matching serialize.py / merge.py format)
+# ══════════════════════════════════════════════════════════════════════════════
 
-
-# -------------------------------
-# 🔹 Apply transforms
-# -------------------------------
-def apply_transforms(obj, entry):
-    obj.location = entry["loc"]
-    obj.rotation_euler = entry["rot"]
-    obj.scale = entry["scale"]
-
-
-# -------------------------------
-# 🔹 Get sorted version entries
-# -------------------------------
 def get_versions(history_dir):
     """Return list of (version_num, timestamp, is_merge, filepath) sorted by version."""
     files = sorted(glob.glob(os.path.join(history_dir, "v*.json")))
@@ -80,9 +126,10 @@ def get_versions(history_dir):
     return entries
 
 
-# -------------------------------
-# 🔹 Restore from a snapshot
-# -------------------------------
+# ══════════════════════════════════════════════════════════════════════════════
+# Restore logic
+# ══════════════════════════════════════════════════════════════════════════════
+
 def restore_from(snapshot_path, current_path):
     """Apply a snapshot to the scene and save."""
     spatial_data = load_json(snapshot_path)
@@ -95,13 +142,12 @@ def restore_from(snapshot_path, current_path):
 
     for entry in spatial_data:
         name = entry["name"]
-        obj_exists = name in bpy.data.objects
-        obj = get_or_create_object(name)
+        obj, was_created = get_or_create_object(name)
         apply_transforms(obj, entry)
-        if obj_exists:
-            updated += 1
-        else:
+        if was_created:
             created += 1
+        else:
+            updated += 1
 
     # Sync spatial.json with restored state
     shutil.copy2(snapshot_path, current_path)
@@ -109,15 +155,26 @@ def restore_from(snapshot_path, current_path):
     # Save .blend file
     bpy.ops.wm.save_mainfile()
 
+    # Show attribution info if available
+    users = set()
+    for entry in spatial_data:
+        user = entry.get("modified_by")
+        if user and user != "unknown":
+            users.add(user)
+
     print(
         f"\n[Vertex] ✅ Restored {len(spatial_data)} object(s) from {os.path.basename(snapshot_path)} "
-        f"({created} created, {updated} updated)\n"
+        f"({created} created, {updated} updated)"
     )
+    if users:
+        print(f"         👤 Contributors: {', '.join(sorted(users))}")
+    print()
 
 
-# -------------------------------
-# 🔹 Main
-# -------------------------------
+# ══════════════════════════════════════════════════════════════════════════════
+# Main
+# ══════════════════════════════════════════════════════════════════════════════
+
 def main():
     base_dir = os.path.dirname(bpy.data.filepath) if bpy.data.filepath else os.getcwd()
     history_dir = os.path.join(base_dir, "data", "history")

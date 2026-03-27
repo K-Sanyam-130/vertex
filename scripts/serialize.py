@@ -4,40 +4,79 @@ serialize.py — Vertex Spatial Serializer
 Extracts spatial data (name, location, rotation, scale) from all
 objects in the current Blender scene and writes it to data/spatial.json.
 
-Each run also saves a versioned snapshot in data/history/ so any
-previous state can be restored later.
+Each run saves a versioned snapshot in data/history/.
+Supports user attribution: --user <name> to tag who made changes.
 
 Run inside Blender:
     blender --background yourfile.blend --python scripts/serialize.py
-Or from Blender's Script Editor / Python console.
+    blender --background yourfile.blend --python scripts/serialize.py -- --user sanyam
 """
 
 import bpy
 import json
 import os
+import sys
 import shutil
 import glob
 from datetime import datetime
 
 
-def collect_spatial_data():
+# ───────────────────────────────────
+# 🔹 Parse args
+# ───────────────────────────────────
+def parse_args():
+    argv = sys.argv
+    if "--" in argv:
+        script_args = argv[argv.index("--") + 1:]
+    else:
+        script_args = []
+
+    user = "unknown"
+    i = 0
+    while i < len(script_args):
+        if script_args[i] == "--user" and i + 1 < len(script_args):
+            user = script_args[i + 1]
+            i += 2
+        else:
+            i += 1
+    return user
+
+
+# ───────────────────────────────────
+# 🔹 Load previous state for attribution
+# ───────────────────────────────────
+def load_previous(filepath):
+    """Load previous spatial.json to preserve attribution for unchanged objects."""
+    if not os.path.isfile(filepath):
+        return {}
+    with open(filepath, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return {entry["name"]: entry for entry in data}
+
+
+def transforms_changed(prev, loc, rot, scale):
+    """Check if transforms differ from previous entry."""
+    if prev["loc"] != loc or prev["rot"] != rot or prev["scale"] != scale:
+        return True
+    return False
+
+
+# ───────────────────────────────────
+# 🔹 Collect spatial data
+# ───────────────────────────────────
+def collect_spatial_data(user, previous):
     """Iterate over all scene objects and extract spatial transforms.
 
-    Returns a list of dicts, each containing:
-        name  — object name (guaranteed unique)
-        loc   — [x, y, z] world location
-        rot   — [x, y, z] Euler rotation in radians
-        scale — [x, y, z] scale factors
-
-    Raises ValueError if duplicate object names are detected.
+    - Tags each object with modified_by and modified_at
+    - Preserves previous attribution if object hasn't changed
     """
     seen_names = set()
     entries = []
+    now = datetime.now().isoformat(timespec="seconds")
 
     for obj in bpy.data.objects:
         name = obj.name
 
-        # --- Duplicate-name guard ---
         if name in seen_names:
             raise ValueError(
                 f"Duplicate object name detected: '{name}'. "
@@ -45,35 +84,49 @@ def collect_spatial_data():
             )
         seen_names.add(name)
 
+        loc = [round(v, 6) for v in obj.location]
+        rot = [round(v, 6) for v in obj.rotation_euler]
+        scale = [round(v, 6) for v in obj.scale]
+
+        # Check if this object existed before and hasn't changed
+        prev = previous.get(name)
+        if prev and not transforms_changed(prev, loc, rot, scale):
+            # Preserve old attribution
+            modified_by = prev.get("modified_by", user)
+            modified_at = prev.get("modified_at", now)
+        else:
+            # New or changed — tag with current user
+            modified_by = user
+            modified_at = now
+
         entries.append({
             "name": name,
-            "loc": [round(v, 6) for v in obj.location],
-            "rot": [round(v, 6) for v in obj.rotation_euler],
-            "scale": [round(v, 6) for v in obj.scale],
+            "loc": loc,
+            "rot": rot,
+            "scale": scale,
+            "modified_by": modified_by,
+            "modified_at": modified_at,
         })
 
     return entries
 
 
 def write_json(data, filepath):
-    """Write data to a JSON file, creating parent directories if needed."""
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
 def get_next_version(history_dir):
-    """Determine the next version number from existing history files."""
     os.makedirs(history_dir, exist_ok=True)
     existing = glob.glob(os.path.join(history_dir, "v*.json"))
     if not existing:
         return 1
-    # Extract version numbers from filenames like v001_2026-03-27_22-50.json
     versions = []
     for f in existing:
         basename = os.path.basename(f)
         try:
-            num = int(basename.split("_")[0][1:])  # "v001_..." -> 1
+            num = int(basename.split("_")[0][1:])
             versions.append(num)
         except (ValueError, IndexError):
             continue
@@ -81,13 +134,16 @@ def get_next_version(history_dir):
 
 
 def main():
-    """Entry point — serialize spatial data and save to disk."""
-    # Resolve paths relative to the .blend file (or cwd as fallback)
+    user = parse_args()
+
     base_dir = os.path.dirname(bpy.data.filepath) if bpy.data.filepath else os.getcwd()
     output_path = os.path.join(base_dir, "data", "spatial.json")
     history_dir = os.path.join(base_dir, "data", "history")
 
-    # Save current spatial.json as a versioned snapshot before overwriting
+    # Load previous state for attribution tracking
+    previous = load_previous(output_path)
+
+    # Save current spatial.json as versioned snapshot before overwriting
     if os.path.isfile(output_path):
         version = get_next_version(history_dir)
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -99,10 +155,20 @@ def main():
         print(f"[Vertex] 📸 Saved snapshot: {snapshot_name}")
 
     # Collect and write current state
-    spatial_data = collect_spatial_data()
+    spatial_data = collect_spatial_data(user, previous)
     write_json(spatial_data, output_path)
 
-    print(f"[Vertex] Serialized {len(spatial_data)} object(s) → {output_path}")
+    # Also save a copy named after the blend file (for easy merging)
+    blend_name = os.path.splitext(os.path.basename(bpy.data.filepath))[0] if bpy.data.filepath else None
+    if blend_name:
+        named_copy = os.path.join(base_dir, "data", f"{blend_name}.json")
+        write_json(spatial_data, named_copy)
+        print(f"[Vertex] Serialized {len(spatial_data)} object(s) → {output_path}")
+        print(f"[Vertex] 📄 Blend copy → data/{blend_name}.json")
+    else:
+        print(f"[Vertex] Serialized {len(spatial_data)} object(s) → {output_path}")
+
+    print(f"[Vertex] 👤 User: {user}")
 
 
 if __name__ == "__main__":
