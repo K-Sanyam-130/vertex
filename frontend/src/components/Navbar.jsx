@@ -24,9 +24,9 @@ export default function Navbar({ isDashboard, user, onCommitClick }) {
             >
               Projects
             </button>
-            <button className="navbar-link">Merge Hub</button>
-            <button className="navbar-link">Activity</button>
-            <button className="navbar-link">Settings</button>
+            <button className="navbar-link" onClick={() => alert('Coming soon!')}>Merge Hub</button>
+            <button className="navbar-link" onClick={() => alert('Coming soon!')}>Activity</button>
+            <button className="navbar-link" onClick={() => alert('Coming soon!')}>Settings</button>
           </div>
 
           <div className="navbar-actions">
@@ -40,10 +40,10 @@ export default function Navbar({ isDashboard, user, onCommitClick }) {
                 <span className="navbar-username">{user.login}</span>
               </div>
             ) : null}
-            <button className="btn btn-outline btn-sm" style={{ borderRadius: '100px' }}>
+            <button className="btn btn-outline btn-sm" style={{ borderRadius: '100px' }} onClick={() => alert('Coming soon!')}>
               🔔
             </button>
-            <button className="btn btn-outline btn-sm" style={{ borderRadius: '100px' }}>
+            <button className="btn btn-outline btn-sm" style={{ borderRadius: '100px' }} onClick={() => alert('Coming soon!')}>
               ❓
             </button>
             <button
@@ -59,16 +59,16 @@ export default function Navbar({ isDashboard, user, onCommitClick }) {
         <>
           <div className="navbar-links">
             <button className="navbar-link">Projects</button>
-            <button className="navbar-link">Merge Hub</button>
-            <button className="navbar-link">Activity</button>
-            <button className="navbar-link">Settings</button>
+            <button className="navbar-link" onClick={() => alert('Coming soon!')}>Merge Hub</button>
+            <button className="navbar-link" onClick={() => alert('Coming soon!')}>Activity</button>
+            <button className="navbar-link" onClick={() => alert('Coming soon!')}>Settings</button>
           </div>
 
           <div className="navbar-actions">
-            <button className="btn btn-outline btn-sm" style={{ borderRadius: '100px' }}>
+            <button className="btn btn-outline btn-sm" style={{ borderRadius: '100px' }} onClick={() => alert('Coming soon!')}>
               🔔
             </button>
-            <button className="btn btn-outline btn-sm" style={{ borderRadius: '100px' }}>
+            <button className="btn btn-outline btn-sm" style={{ borderRadius: '100px' }} onClick={() => alert('Coming soon!')}>
               ❓
             </button>
             <button

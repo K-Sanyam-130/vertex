@@ -161,14 +161,22 @@ router.post('/sync', (req, res) => {
             commitOutput = execSync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, { cwd: PROJECT_ROOT, encoding: 'utf8' });
         } catch (e) {
             // Nothing to commit is not an error
-            if (e.stderr && e.stderr.includes('nothing to commit')) {
-                return res.json({
-                    success: true,
-                    output: 'Nothing to commit, working tree clean.',
-                    errors: '',
-                });
+            if (e.stdout && e.stdout.includes('nothing to commit')) {
+                commitOutput = 'Nothing to commit, working tree clean.';
+            } else if (e.stderr && e.stderr.includes('nothing to commit')) {
+                commitOutput = 'Nothing to commit, working tree clean.';
+            } else {
+                throw e;
             }
-            throw e;
+        }
+
+        let pullOutput = '';
+        try {
+            // To prevent non-fast-forward reject errors, pull --rebase from remote first
+            pullOutput = execSync('git pull --rebase', { cwd: PROJECT_ROOT, encoding: 'utf8', timeout: 30000 });
+        } catch (e) {
+            // It's fine to fail pulling if there is no remote configured
+            pullOutput = e.stderr || e.message || '';
         }
 
         let pushOutput = '';
@@ -176,15 +184,15 @@ router.post('/sync', (req, res) => {
             pushOutput = execSync('git push', { cwd: PROJECT_ROOT, encoding: 'utf8', timeout: 30000 });
         } catch (e) {
             return res.json({
-                success: true,
-                output: `Committed successfully.\n${commitOutput}\n\nPush failed (no remote configured or network issue):\n${e.stderr || e.message}`,
-                errors: '',
+                success: false,
+                output: `Commit successful.\n\nPush failed:\n${e.stderr || e.message}`,
+                errors: e.stderr || e.message,
             });
         }
 
         res.json({
             success: true,
-            output: `${addOutput}\n${commitOutput}\n${pushOutput}`.trim(),
+            output: `${addOutput}\n${commitOutput}\n${pullOutput}\n${pushOutput}`.trim(),
             errors: '',
         });
     } catch (err) {
