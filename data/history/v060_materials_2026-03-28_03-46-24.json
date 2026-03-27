@@ -1,0 +1,90 @@
+[
+    {
+        "alpha": 1.0,
+        "base_color": [
+            0.8,
+            0.8,
+            0.8
+        ],
+        "emission": {
+            "color": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "strength": 0.0
+        },
+        "ior": 1.5,
+        "material_name": "Material.002",
+        "metallic": 0.0,
+        "roughness": 0.5,
+        "specular": 0.5,
+        "textures": []
+    },
+    {
+        "alpha": 1.0,
+        "base_color": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "emission": {
+            "color": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "strength": 1.0
+        },
+        "ior": 1.45,
+        "material_name": "Material.005",
+        "metallic": 0.5,
+        "roughness": 0.0,
+        "specular": 0.5,
+        "textures": []
+    },
+    {
+        "alpha": 1.0,
+        "base_color": [
+            1.0,
+            1.0,
+            1.0
+        ],
+        "emission": {
+            "color": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "strength": 0.0
+        },
+        "ior": 1.5,
+        "material_name": "Material.033",
+        "metallic": 0.0,
+        "roughness": 0.5,
+        "specular": 1.0,
+        "textures": []
+    },
+    {
+        "alpha": 1.0,
+        "base_color": [
+            0.010743,
+            0.069012,
+            0.447853
+        ],
+        "emission": {
+            "color": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "strength": 0.0
+        },
+        "ior": 1.5,
+        "material_name": "Material.616",
+        "metallic": 0.0,
+        "roughness": 0.5,
+        "specular": 1.0,
+        "textures": []
+    }
+]

@@ -1,0 +1,182 @@
+[
+    {
+        "modifiers": [
+            {
+                "mirror_object": null,
+                "type": "MIRROR",
+                "use_axis": [
+                    false,
+                    true,
+                    false
+                ],
+                "use_bisect_axis": [
+                    false,
+                    false,
+                    false
+                ]
+            },
+            {
+                "levels_render": 3,
+                "levels_viewport": 2,
+                "type": "SUBSURF"
+            }
+        ],
+        "object_name": "Cube"
+    },
+    {
+        "modifiers": [
+            {
+                "levels_render": 2,
+                "levels_viewport": 1,
+                "type": "SUBSURF"
+            }
+        ],
+        "object_name": "Cube.001"
+    },
+    {
+        "modifiers": [
+            {
+                "mirror_object": null,
+                "type": "MIRROR",
+                "use_axis": [
+                    false,
+                    true,
+                    false
+                ],
+                "use_bisect_axis": [
+                    false,
+                    false,
+                    false
+                ]
+            },
+            {
+                "levels_render": 2,
+                "levels_viewport": 2,
+                "type": "SUBSURF"
+            }
+        ],
+        "object_name": "Retrovisor.001"
+    },
+    {
+        "modifiers": [
+            {
+                "levels_render": 2,
+                "levels_viewport": 0,
+                "type": "SUBSURF"
+            }
+        ],
+        "object_name": "RodaCarroceriaDetalhada..000"
+    },
+    {
+        "modifiers": [
+            {
+                "levels_render": 2,
+                "levels_viewport": 0,
+                "type": "SUBSURF"
+            }
+        ],
+        "object_name": "RodaCarroceriaDetalhada..001"
+    },
+    {
+        "modifiers": [
+            {
+                "levels_render": 2,
+                "levels_viewport": 0,
+                "type": "SUBSURF"
+            }
+        ],
+        "object_name": "RodaCarroceriaDetalhada..002"
+    },
+    {
+        "modifiers": [
+            {
+                "levels_render": 2,
+                "levels_viewport": 0,
+                "type": "SUBSURF"
+            }
+        ],
+        "object_name": "RodaCarroceriaDetalhada..003"
+    },
+    {
+        "modifiers": [
+            {
+                "levels_render": 2,
+                "levels_viewport": 0,
+                "type": "SUBSURF"
+            }
+        ],
+        "object_name": "RodaCarroceriaDetalhada..004"
+    },
+    {
+        "modifiers": [
+            {
+                "mirror_object": null,
+                "type": "MIRROR",
+                "use_axis": [
+                    false,
+                    false,
+                    true
+                ],
+                "use_bisect_axis": [
+                    false,
+                    false,
+                    false
+                ]
+            },
+            {
+                "levels_render": 3,
+                "levels_viewport": 3,
+                "type": "SUBSURF"
+            }
+        ],
+        "object_name": "carroceriaB"
+    },
+    {
+        "modifiers": [
+            {
+                "mirror_object": null,
+                "type": "MIRROR",
+                "use_axis": [
+                    false,
+                    false,
+                    true
+                ],
+                "use_bisect_axis": [
+                    false,
+                    false,
+                    false
+                ]
+            },
+            {
+                "levels_render": 3,
+                "levels_viewport": 3,
+                "type": "SUBSURF"
+            }
+        ],
+        "object_name": "carroceriaB.001"
+    },
+    {
+        "modifiers": [
+            {
+                "mirror_object": null,
+                "type": "MIRROR",
+                "use_axis": [
+                    false,
+                    true,
+                    false
+                ],
+                "use_bisect_axis": [
+                    false,
+                    false,
+                    false
+                ]
+            },
+            {
+                "levels_render": 3,
+                "levels_viewport": 2,
+                "type": "SUBSURF"
+            }
+        ],
+        "object_name": "interior-preenchimento"
+    }
+]

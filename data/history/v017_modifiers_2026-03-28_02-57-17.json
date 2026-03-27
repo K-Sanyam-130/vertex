@@ -1,0 +1,37 @@
+[
+    {
+        "modifiers": [
+            {
+                "levels_render": 3,
+                "levels_viewport": 2,
+                "type": "SUBSURF"
+            },
+            {
+                "count": 5,
+                "relative_offset": [
+                    1.0,
+                    0.0,
+                    0.0
+                ],
+                "type": "ARRAY"
+            }
+        ],
+        "object_name": "Cube"
+    },
+    {
+        "modifiers": [
+            {
+                "operation": "DIFFERENCE",
+                "target": "Cube",
+                "type": "BOOLEAN"
+            },
+            {
+                "limit_method": "ANGLE",
+                "segments": 3,
+                "type": "BEVEL",
+                "width": 0.02
+            }
+        ],
+        "object_name": "Sphere"
+    }
+]
