@@ -205,9 +205,18 @@ def merge_spatial_3way(base, a, b, strategy="theirs"):
 
 def load_json(filepath):
     if not os.path.isfile(filepath):
-        raise FileNotFoundError(f"[Vertex] Not found: {filepath}")
-    with open(filepath, "r", encoding="utf-8") as f:
-        return json.load(f)
+        print(f"[Vertex] ❌ Not found: {filepath}")
+        sys.exit(1)
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except UnicodeDecodeError:
+        print(f"[Vertex] ❌ Encoding error: '{os.path.basename(filepath)}' contains binary data.")
+        print("         Did you pass a .blend file? Please pass .json files created by the Serialize tool.")
+        sys.exit(1)
+    except json.JSONDecodeError as e:
+        print(f"[Vertex] ❌ Invalid JSON in '{os.path.basename(filepath)}': {e}")
+        sys.exit(1)
 
 
 def save_json(data, filepath):
@@ -333,12 +342,35 @@ def main():
     output_path = os.path.join(data_dir, "spatial.json")
 
     # Resolve file paths relative to base_dir
+    import subprocess
     resolved_files = []
     for f in files:
-        if not os.path.isabs(f):
-            resolved_files.append(os.path.join(base_dir, f))
-        else:
-            resolved_files.append(f)
+        f_path = f if os.path.isabs(f) else os.path.join(base_dir, f)
+        
+        # Auto-serialize .blend files on the fly
+        if f_path.lower().endswith(".blend"):
+            print(f"[Vertex] ⚙ Auto-serializing {os.path.basename(f_path)}...")
+            script_path = os.path.join(base_dir, "scripts", "serialize.py")
+            cmd = [
+                bpy.app.binary_path, 
+                "--background", 
+                "--factory-startup", 
+                f_path, 
+                "--python", 
+                script_path
+            ]
+            res = subprocess.run(cmd, capture_output=True, text=True)
+            if res.returncode != 0:
+                print(f"[Vertex] ❌ Failed to auto-serialize {os.path.basename(f_path)}")
+                print(res.stdout)
+                print(res.stderr)
+                sys.exit(1)
+            
+            # Use the generated JSON file instead
+            blend_name = os.path.splitext(os.path.basename(f_path))[0]
+            f_path = os.path.join(data_dir, f"{blend_name}.json")
+            
+        resolved_files.append(f_path)
 
     # Derive labels from filenames for attribution
     label_a = os.path.splitext(os.path.basename(resolved_files[0]))[0]

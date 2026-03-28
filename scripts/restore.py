@@ -156,6 +156,10 @@ def get_or_create_object(name):
 
 def apply_transforms(obj, entry):
     """Set location, rotation, and scale from a spatial entry."""
+    # Ensure correct rotation mode, otherwise euler assignment may act randomly 
+    # or be completely ignored if the object was set to QUATERNION
+    obj.rotation_mode = 'XYZ'
+    
     obj.location = entry["loc"]
     obj.rotation_euler = entry["rot"]
     obj.scale = entry["scale"]
