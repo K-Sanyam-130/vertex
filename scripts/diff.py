@@ -140,6 +140,70 @@ def clear_ghosts():
     return len(ghosts)
 
 
+def embed_tracker(count=2):
+    """Embed an auto-run text block to track openings and clean up ghosts."""
+    bpy.context.scene["ghost_remaining_opens"] = count
+
+    text_name = "vertex_ghost_tracker.py"
+    if text_name in bpy.data.texts:
+        text_block = bpy.data.texts[text_name]
+        text_block.clear()
+    else:
+        text_block = bpy.data.texts.new(name=text_name)
+
+    # Must be enabled for auto-run on load
+    text_block.use_module = True
+
+    script_content = """import bpy
+
+def cleanup_ghosts():
+    scene = bpy.context.scene
+    remaining = scene.get('ghost_remaining_opens', 0)
+    
+    new_remaining = remaining - 1
+    scene['ghost_remaining_opens'] = new_remaining
+    
+    if new_remaining <= 0:
+        ghosts = [obj for obj in bpy.data.objects if obj.name.startswith("_ghost_")]
+        for g in ghosts:
+            bpy.data.objects.remove(g, do_unlink=True)
+            
+        text_name = 'vertex_ghost_tracker.py'
+        if text_name in bpy.data.texts:
+            bpy.data.texts.remove(bpy.data.texts[text_name])
+            
+        try:
+            bpy.ops.wm.save_mainfile()
+        except:
+            pass
+    else:
+        try:
+            bpy.ops.wm.save_mainfile()
+        except:
+            pass
+
+    return None
+
+@bpy.app.handlers.persistent
+def check_ghosts_on_load(dummy):
+    if not bpy.app.background:
+        bpy.app.timers.register(cleanup_ghosts, first_interval=0.5)
+
+bpy.app.handlers.load_post = [h for h in bpy.app.handlers.load_post if h.__name__ != 'check_ghosts_on_load']
+bpy.app.handlers.load_post.append(check_ghosts_on_load)
+"""
+    text_block.write(script_content)
+
+
+def save_blend():
+    """Save the current blend file if the filepath is set."""
+    if bpy.data.filepath:
+        try:
+            bpy.ops.wm.save_mainfile()
+        except:
+            pass
+
+
 def create_ghost(name, entry, color, label=""):
     """Create a wireframe ghost at a previous position."""
     # Use a cube mesh as the ghost shape
@@ -178,6 +242,9 @@ def main():
     # Clear mode
     if clear_flag:
         count = clear_ghosts()
+        if "vertex_ghost_tracker.py" in bpy.data.texts:
+            bpy.data.texts.remove(bpy.data.texts["vertex_ghost_tracker.py"])
+        save_blend()
         print(f"[Vertex] 🧹 Removed {count} ghost(s)")
         return
 
@@ -245,8 +312,13 @@ def main():
     # ── Summary ──
     total = len(changed) + len(removed) + len(added)
     if total == 0:
+        if "vertex_ghost_tracker.py" in bpy.data.texts:
+            bpy.data.texts.remove(bpy.data.texts["vertex_ghost_tracker.py"])
+        save_blend()
         print(f"[Vertex] ✔ No changes detected since {compare_label}")
     else:
+        embed_tracker(count=2)
+        save_blend()
         print(f"\n[Vertex] 📊 Diff against {compare_label} — {total} change(s):\n")
         for n in changed:
             user_info = ""

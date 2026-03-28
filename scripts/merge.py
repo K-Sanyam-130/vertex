@@ -354,6 +354,19 @@ def main():
         shutil.copy2(output_path, snapshot_path)
         print(f"[Vertex] 📸 Pre-merge snapshot: {snapshot_name}")
 
+        # Enforce history limit
+        pattern = os.path.join(history_dir, f"v*_merge_*.json")
+        existing_files = sorted(glob.glob(pattern))
+
+        if len(existing_files) > 10:
+            excess = len(existing_files) - 10
+            for i in range(excess):
+                try:
+                    os.remove(existing_files[i])
+                    print(f"[Vertex] 🗑 Cleaned up old merge snapshot: {os.path.basename(existing_files[i])}")
+                except OSError:
+                    pass
+
     print(f"[Vertex] Mode: {mode.upper()}")
     print(f"[Vertex] Files: {label_a} + {label_b}")
 

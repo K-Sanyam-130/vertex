@@ -566,13 +566,14 @@ def serialize_modifiers():
 # Snapshot & Version Management
 # ══════════════════════════════════════════════════════════════════════════════
 
-def save_snapshot(output_path, history_dir, domain_prefix="spatial"):
+def save_snapshot(output_path, history_dir, domain_prefix="spatial", limit=10):
     """Save the current state file as a versioned snapshot before overwriting.
 
     Args:
         output_path: Path to the current domain JSON file.
         history_dir: Directory for versioned snapshots.
         domain_prefix: Prefix for the snapshot filename (e.g. "spatial", "lighting").
+        limit: Maximum number of snapshots to keep per domain.
     """
     if not os.path.isfile(output_path):
         return
@@ -585,6 +586,19 @@ def save_snapshot(output_path, history_dir, domain_prefix="spatial"):
     os.makedirs(history_dir, exist_ok=True)
     shutil.copy2(output_path, snapshot_path)
     print(f"[Vertex] 📸 Saved {domain_prefix} snapshot: {snapshot_name}")
+
+    # Enforce history limit
+    pattern = os.path.join(history_dir, f"v*_{domain_prefix}_*.json")
+    existing_files = sorted(glob.glob(pattern))
+
+    if len(existing_files) > limit:
+        excess = len(existing_files) - limit
+        for i in range(excess):
+            try:
+                os.remove(existing_files[i])
+                print(f"[Vertex] 🗑 Cleaned up old {domain_prefix} snapshot: {os.path.basename(existing_files[i])}")
+            except OSError:
+                pass
 
 
 # ══════════════════════════════════════════════════════════════════════════════

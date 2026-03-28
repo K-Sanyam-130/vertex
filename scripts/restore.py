@@ -901,6 +901,24 @@ def full_restore(snapshot_path, data_dir, current_path):
 # ══════════════════════════════════════════════════════════════════════════════
 
 import argparse
+import sys
+
+def parse_args():
+    argv = sys.argv
+    if "--" in argv:
+        script_args = argv[argv.index("--") + 1:]
+    else:
+        script_args = []
+
+    version = None
+    i = 0
+    while i < len(script_args):
+        if script_args[i] == "--version" and i + 1 < len(script_args):
+            version = int(script_args[i + 1])
+            i += 2
+        else:
+            i += 1
+    return version
 
 def main():
     base_dir = (
@@ -930,23 +948,19 @@ def main():
         full_restore(filepath, data_dir, current_path)
         return
 
-    # --- Multiple versions: let user pick ---
-    print(f"\n[Vertex] 📋 Available spatial versions ({len(versions)} snapshots):\n")
-    print(f"  {'#':<6} {'Type':<10} {'Timestamp':<25}")
-    print(f"  {'---':<6} {'---':<10} {'---':<25}")
+    chosen_ver = parse_args()
 
-    for ver_num, domain, timestamp, is_merge, _ in versions:
-        tag = "[MERGE]" if is_merge else ""
-        print(f"  v{ver_num:<5} {tag:<10} {timestamp}")
+    # --- Print versions if no version specified ---
+    if chosen_ver is None:
+        print(f"\n[Vertex] 📋 Available spatial versions ({len(versions)} snapshots):\n")
+        print(f"  {'#':<6} {'Type':<10} {'Timestamp':<25}")
+        print(f"  {'---':<6} {'---':<10} {'---':<25}")
 
-    print()
-    try:
-        choice = input(
-            "[Vertex] Enter version number to restore (e.g. 1): "
-        ).strip()
-        chosen_ver = int(choice)
-    except (ValueError, EOFError):
-        print("[Vertex] ❌ Invalid input. Aborting.")
+        for ver_num, domain, timestamp, is_merge, _ in versions:
+            tag = "[MERGE]" if is_merge else ""
+            print(f"  v{ver_num:<5} {tag:<10} {timestamp}")
+
+        print("\n[Vertex] ℹ Use the Version Number input to select a version to restore.")
         return
 
     # Find the chosen version

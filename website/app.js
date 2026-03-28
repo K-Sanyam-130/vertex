@@ -217,28 +217,7 @@ function getPanelHTML(type) {
             <button class="p-btn" onclick="genDiff()">Execute</button>
             <div id="p-diff-out"></div>`;
 
-        case "branch": return `
-            <h2 class="p-title">🌿 Branch</h2>
-            <p class="p-desc">Create, switch, list, and delete Git branches for parallel workflows.</p>
-            <div class="p-group">
-                <label class="p-label">Blend File</label>
-                <input type="text" class="p-input" id="p-br-blend" value="${esc(blend)}">
-            </div>
-            <div class="p-group">
-                <label class="p-label">Action</label>
-                <select class="p-input" id="p-br-action" onchange="toggleBrName()">
-                    <option value="list">List Branches</option>
-                    <option value="create">Create Branch</option>
-                    <option value="switch">Switch Branch</option>
-                    <option value="delete">Delete Branch</option>
-                </select>
-            </div>
-            <div class="p-group" id="p-br-name-g" style="display:none">
-                <label class="p-label">Branch Name</label>
-                <input type="text" class="p-input" id="p-br-name" placeholder="lighting-v2">
-            </div>
-            <button class="p-btn" onclick="genBranch()">Execute</button>
-            <div id="p-br-out"></div>`;
+
 
         case "sync": return `
             <h2 class="p-title">🔄 Sync</h2>
@@ -384,13 +363,31 @@ function genDiff() {
     runCommand(cmd, "p-diff-out");
 }
 
-function genBranch() {
-    const b = val("p-br-blend", "Untitled.blend");
-    const action = val("p-br-action", "list");
-    const name = val("p-br-name");
-    let cmd = `blender --background ${b} --python scripts/branch.py`;
-    if (action !== "list") cmd += ` -- --${action} ${name || "branch-name"}`;
-    runCommand(cmd, "p-br-out");
+function openBlendPrompt() {
+    let name = prompt("Enter file name (along with .blend extension):", "Untitled.blend");
+    if (!name) return;
+    if (!name.endsWith(".blend")) {
+        name += ".blend";
+    }
+    
+    // Auto-create file if it doesn't exist, then launch it
+    let cmd = `(if not exist "${name}" blender --background --factory-startup --python scripts/create_empty.py -- "${name}") & start "" blender "${name}"`;
+    
+    // Send it to the backend executor and report back if failed
+    fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command: cmd })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.returncode !== 0) {
+            alert("Error opening Blender: " + (data.stderr || data.stdout || "Unknown error"));
+        }
+    })
+    .catch(err => {
+        alert("Failed to connect to backend: " + err);
+    });
 }
 
 function genSync() {
@@ -417,10 +414,7 @@ function toggleDiffVal() {
     else { g.style.display = "none"; }
 }
 
-function toggleBrName() {
-    const a = val("p-br-action");
-    document.getElementById("p-br-name-g").style.display = a === "list" ? "none" : "block";
-}
+
 
 
 // ══════════════════════════════════════════════════════════════

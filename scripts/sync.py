@@ -175,15 +175,28 @@ def main():
     if os.path.isfile(output_path):
         version = get_next_version(history_dir)
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        snapshot_name = f"v{version:03d}_{timestamp}.json"
+        snapshot_name = f"v{version:03d}_spatial_{timestamp}.json"
         snapshot_path = os.path.join(history_dir, snapshot_name)
         os.makedirs(history_dir, exist_ok=True)
         shutil.copy2(output_path, snapshot_path)
-        print(f"         📸 Snapshot: {snapshot_name}")
+        print(f"[Vertex] 📸 Snapshot: {snapshot_name}")
+
+        # Enforce history limit
+        pattern = os.path.join(history_dir, f"v*_spatial_*.json")
+        existing_files = sorted(glob.glob(pattern))
+
+        if len(existing_files) > 10:
+            excess = len(existing_files) - 10
+            for i in range(excess):
+                try:
+                    os.remove(existing_files[i])
+                    print(f"[Vertex] 🗑 Cleaned up old spatial snapshot: {os.path.basename(existing_files[i])}")
+                except OSError:
+                    pass
 
     spatial_data = collect_spatial_data(user, previous)
     write_json(spatial_data, output_path)
-    print(f"         Serialized {len(spatial_data)} object(s)")
+    print(f"[Vertex] 📦 Serialized {len(spatial_data)} object(s)")
 
     # ── Step 2: Git add ──
     print("[Vertex] 📋 Step 2/4 — Staging changes...")
