@@ -16,13 +16,13 @@
       1.0,
       1.0
     ],
-    "modified_by": "KrishnaRaghavendra05",
-    "modified_at": "2026-03-28T13:03:17"
+    "modified_by": "KSanyam",
+    "modified_at": "2026-03-28T10:25:48"
   },
   {
     "name": "Cube",
     "loc": [
-      0.0,
+      10.0,
       5.0,
       0.0
     ],
@@ -37,7 +37,7 @@
       1.0
     ],
     "modified_by": "KrishnaRaghavendra05",
-    "modified_at": "2026-03-28T13:03:17"
+    "modified_at": "2026-03-28T16:10:16"
   },
   {
     "name": "Light",
@@ -56,7 +56,7 @@
       1.0,
       1.0
     ],
-    "modified_by": "KrishnaRaghavendra05",
-    "modified_at": "2026-03-28T13:03:17"
+    "modified_by": "KSanyam",
+    "modified_at": "2026-03-28T10:25:48"
   }
 ]

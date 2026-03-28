@@ -5,8 +5,8 @@
             -6.925791,
             4.958309
         ],
-        "modified_at": "2026-03-28T10:25:48",
-        "modified_by": "KSanyam",
+        "modified_at": "2026-03-28T13:03:17",
+        "modified_by": "KrishnaRaghavendra05",
         "name": "Camera",
         "rot": [
             1.109319,
@@ -22,11 +22,11 @@
     {
         "loc": [
             0.0,
-            0.0,
+            5.0,
             0.0
         ],
-        "modified_at": "2026-03-28T16:09:21",
-        "modified_by": "unknown",
+        "modified_at": "2026-03-28T13:03:17",
+        "modified_by": "KrishnaRaghavendra05",
         "name": "Cube",
         "rot": [
             0.0,
@@ -45,8 +45,8 @@
             1.005454,
             5.903862
         ],
-        "modified_at": "2026-03-28T10:25:48",
-        "modified_by": "KSanyam",
+        "modified_at": "2026-03-28T13:03:17",
+        "modified_by": "KrishnaRaghavendra05",
         "name": "Light",
         "rot": [
             0.650328,

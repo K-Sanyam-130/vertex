@@ -1,11 +1,13 @@
 [
   {
-    "name": "Camera",
     "loc": [
       7.358891,
       -6.925791,
       4.958309
     ],
+    "modified_at": "2026-03-28T10:25:48",
+    "modified_by": "KSanyam",
+    "name": "Camera",
     "rot": [
       1.109319,
       0.0,
@@ -15,17 +17,17 @@
       1.0,
       1.0,
       1.0
-    ],
-    "modified_by": "KrishnaRaghavendra05",
-    "modified_at": "2026-03-28T13:03:17"
+    ]
   },
   {
-    "name": "Cube",
     "loc": [
-      0.0,
       5.0,
+      0.0,
       0.0
     ],
+    "modified_at": "2026-03-28T15:39:40",
+    "modified_by": "unknown",
+    "name": "Cube",
     "rot": [
       0.0,
       0.0,
@@ -35,17 +37,17 @@
       1.0,
       1.0,
       1.0
-    ],
-    "modified_by": "KrishnaRaghavendra05",
-    "modified_at": "2026-03-28T13:03:17"
+    ]
   },
   {
-    "name": "Light",
     "loc": [
       4.076245,
       1.005454,
       5.903862
     ],
+    "modified_at": "2026-03-28T10:25:48",
+    "modified_by": "KSanyam",
+    "name": "Light",
     "rot": [
       0.650328,
       0.055217,
@@ -55,8 +57,6 @@
       1.0,
       1.0,
       1.0
-    ],
-    "modified_by": "KrishnaRaghavendra05",
-    "modified_at": "2026-03-28T13:03:17"
+    ]
   }
 ]

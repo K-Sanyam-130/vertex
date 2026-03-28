@@ -1,0 +1,16 @@
+[
+    {
+        "color": [
+            1.0,
+            1.0,
+            1.0
+        ],
+        "energy": 1000.0,
+        "name": "Light",
+        "shadow": {
+            "softness": 0.1,
+            "use_shadow": true
+        },
+        "type": "POINT"
+    }
+]

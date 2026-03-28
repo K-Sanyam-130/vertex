@@ -1,11 +1,13 @@
 [
   {
-    "name": "Camera",
     "loc": [
       7.358891,
       -6.925791,
       4.958309
     ],
+    "modified_at": "2026-03-28T10:25:48",
+    "modified_by": "KSanyam",
+    "name": "Camera",
     "rot": [
       1.109319,
       0.0,
@@ -15,17 +17,17 @@
       1.0,
       1.0,
       1.0
-    ],
-    "modified_by": "KSanyam",
-    "modified_at": "2026-03-28T10:25:48"
+    ]
   },
   {
-    "name": "Cube_merged1",
     "loc": [
       5.0,
       0.0,
       0.0
     ],
+    "modified_at": "2026-03-28T16:09:20",
+    "modified_by": "unknown",
+    "name": "Cube_merged1",
     "rot": [
       0.0,
       0.0,
@@ -36,16 +38,17 @@
       1.0,
       1.0
     ],
-    "modified_by": "KrishnaRaghavendra05",
-    "modified_at": "2026-03-28T12:54:45"
+    "merged_from": "merged1"
   },
   {
-    "name": "Cube_merged2",
     "loc": [
       0.0,
       0.0,
       0.0
     ],
+    "modified_at": "2026-03-28T16:09:21",
+    "modified_by": "unknown",
+    "name": "Cube_merged2",
     "rot": [
       0.0,
       0.0,
@@ -56,16 +59,17 @@
       1.0,
       1.0
     ],
-    "modified_by": "KrishnaRaghavendra05",
-    "modified_at": "2026-03-28T12:54:45"
+    "merged_from": "merged2"
   },
   {
-    "name": "Light",
     "loc": [
       4.076245,
       1.005454,
       5.903862
     ],
+    "modified_at": "2026-03-28T10:25:48",
+    "modified_by": "KSanyam",
+    "name": "Light",
     "rot": [
       0.650328,
       0.055217,
@@ -75,8 +79,6 @@
       1.0,
       1.0,
       1.0
-    ],
-    "modified_by": "KSanyam",
-    "modified_at": "2026-03-28T10:25:48"
+    ]
   }
 ]
