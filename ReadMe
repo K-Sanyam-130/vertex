@@ -1,0 +1,78 @@
+🏔️ Project Vertex: Spatial Versioning Protocol for 3D Environments
+
+Project Vertex is a Git-integrated middleware designed to bridge the gap between destructive 3D asset management and modern, non-linear version control systems (VCS). By deconstructing monolithic .blend files into versionable text-based metadata, Vertex brings the power of CI/CD to 3D production pipelines.
+
+🔴 The Problem: The "Binary Blob" Constraint
+
+In modern 3D production, software like Blender saves project data in monolithic Binary Large Objects (BLOBs). While efficient for local storage, these files are "black boxes" to standard development tools.
+
+Indecipherable Diffs: Standard VCS (like Git) treats any change—even moving a single vertex—as a complete rewrite of the binary file.
+
+Workflow Chaos: Two artists cannot work on the same scene simultaneously without risk of overwriting data.
+
+Version Inflation: Teams rely on "Save As" redundancy (e.g., Scene_v01.blend, Scene_v02.blend), leading to massive storage waste.
+
+🟢 The Solution: Atomic Serialization & Middleware
+
+Vertex is a protocol that deconstructs a 3D scene into Atomic Metadata Fragments.
+
+Core Architecture
+
+Instead of versioning the .blend file, Vertex serializes the scene into a Domain-Specific Schema (DSS):
+
+Domain Segment
+
+Data Captured (via Blender bpy API)
+
+spatial.json
+
+Hierarchical transforms (LOC/ROT/SCALE) and parent-child relationships.
+
+shaders.json
+
+Node graph structures, material properties, and texture URIs.
+
+lighting.json
+
+Photometric data, energy levels, and HDRI configurations.
+
+logic.json
+
+Modifier stacks (Subdivision, Boolean, Array) and parameters.
+
+✨ Key Features
+
+👻 Visual Delta-Tracking ("Ghosts")
+
+A Developer reads code diffs; a 3D Artist needs Visual Diffs. Vertex compares the current state vs. a previous commit and projects transparent wireframe "ghosts" directly into the 3D viewport.
+
+Green Overlays: Modified/Moved objects.
+
+Red Overlays: Deleted objects.
+
+🤖 AI-Assisted Semantic Merging
+
+When two branches modify the same object, traditional Git fails. Vertex uses Gemini 2.5 Flash to analyze spatial relationships and artistic intent to resolve conflicts (e.g., merging a lighting change from Branch A with a geometry change from Branch B).
+
+⏳ The Spatial Time Machine
+
+Using a "Time-Travel Slider" in the Blender UI, users can scrub through the Git history of a 3D world in real-time, watching the environment evolve without opening separate files.
+
+🛠️ Technical Workflow (MVP)
+
+Extraction Layer: A Python-based "Watcher" inside Blender monitors bpy.data.
+
+Versioning Layer: A hidden .vertex directory managed by a background Git process.
+
+Conflict Layer: A semantic logic gate (Gemini API) to resolve overlapping 3D changes.
+
+Reconstruction Layer: A script that "re-materializes" the scene from JSON metadata upon branch checkout.
+
+🏆 Hackathon Rubric Alignment
+
+Track 2 (Web Systems & Interaction): We transform the Blender Viewport into a Reality-Blending Interface, where technical Git commands translate into physical changes in a 3D simulation.
+
+Track 5 (Open Innovation): We are building the "impossible"—a Git-native 3D engine that handles non-linear creative evolution with 95% less storage overhead than standard methods.
+
+Built with ❤️ for the 2026 Hackathon.
+Vision: Marrying CI/CD principles with Spatial Computing.
