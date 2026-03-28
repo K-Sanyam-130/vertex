@@ -46,7 +46,7 @@ class VertexHandler(http.server.SimpleHTTPRequestHandler):
                             close_fds=True
                         )
                     
-                    with open(temp_name, 'r') as in_f:
+                    with open(temp_name, 'r', encoding='utf-8', errors='replace') as in_f:
                         stdout_str = in_f.read()
                     
                     # Also show progress in the server terminal for the developer

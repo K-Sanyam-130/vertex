@@ -315,14 +315,16 @@ async function runCommand(cmd, outElementId) {
         const data = await res.json();
         
         let outputHTML = cmdHTML(cmd);
-        if (data.returncode === 0) {
+        if (data.error) {
+            outputHTML += `<div class="cmd-box" style="color:var(--error); white-space:pre-wrap; max-height:200px; overflow:auto; margin-top:8px">❌ Server Error\n${escHTML(data.error)}</div>`;
+        } else if (data.returncode === 0) {
             outputHTML += `<div class="cmd-box" style="color:#00785f; white-space:pre-wrap; max-height:200px; overflow:auto; margin-top:8px">✅ Success\n${escHTML(data.stdout)}</div>`;
         } else {
-            outputHTML += `<div class="cmd-box" style="color:var(--error); white-space:pre-wrap; max-height:200px; overflow:auto; margin-top:8px">❌ Error (Code ${data.returncode})\n${escHTML(data.stderr || data.stdout)}</div>`;
+            outputHTML += `<div class="cmd-box" style="color:var(--error); white-space:pre-wrap; max-height:200px; overflow:auto; margin-top:8px">❌ Error (Code ${data.returncode})\n${escHTML(data.stderr || data.stdout || "")}</div>`;
         }
         outEl.innerHTML = outputHTML;
     } catch (e) {
-        outEl.innerHTML = cmdHTML(cmd) + `<div class="cmd-box" style="color:var(--error); margin-top:8px">❌ Failed to connect to local server. Make sure you are running 'python server.py'</div>`;
+        outEl.innerHTML = cmdHTML(cmd) + `<div class="cmd-box" style="color:var(--error); margin-top:8px">❌ Local connection failed or unexpected UI error. Ensure 'python server.py' is running.<br><br><small style="opacity:0.6">${escHTML(e.toString())}</small></div>`;
     }
 }
 
