@@ -1,6 +1,6 @@
 [
   {
-    "name": "_ghost_Camera",
+    "name": "Camera",
     "loc": [
       7.358891,
       -6.925791,
@@ -17,10 +17,10 @@
       1.0
     ],
     "modified_by": "KSanyam",
-    "modified_at": "2026-03-28T10:24:26"
+    "modified_at": "2026-03-28T10:25:48"
   },
   {
-    "name": "_ghost_Cube",
+    "name": "Cube",
     "loc": [
       10.0,
       5.0,
@@ -37,10 +37,10 @@
       1.0
     ],
     "modified_by": "KSanyam",
-    "modified_at": "2026-03-28T10:24:26"
+    "modified_at": "2026-03-28T10:25:48"
   },
   {
-    "name": "_ghost_Light",
+    "name": "Light",
     "loc": [
       4.076245,
       1.005454,
@@ -57,46 +57,6 @@
       1.0
     ],
     "modified_by": "KSanyam",
-    "modified_at": "2026-03-28T10:24:26"
-  },
-  {
-    "name": "Cube",
-    "loc": [
-      2.0,
-      0.0,
-      0.0
-    ],
-    "rot": [
-      0.0,
-      0.0,
-      0.0
-    ],
-    "scale": [
-      1.0,
-      1.0,
-      1.0
-    ],
-    "modified_by": "KSanyam",
-    "modified_at": "2026-03-28T10:24:26"
-  },
-  {
-    "name": "Cube.001",
-    "loc": [
-      1.0,
-      0.0,
-      0.0
-    ],
-    "rot": [
-      0.0,
-      0.0,
-      0.0
-    ],
-    "scale": [
-      1.0,
-      1.0,
-      1.0
-    ],
-    "modified_by": "KSanyam",
-    "modified_at": "2026-03-28T10:24:26"
+    "modified_at": "2026-03-28T10:25:48"
   }
 ]
