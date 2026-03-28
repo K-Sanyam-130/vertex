@@ -7,32 +7,70 @@
 // 0. GITHUB AUTHENTICATION
 // ══════════════════════════════════════════════════════════════
 
+const GH_BTN_DEFAULT = `<svg height="20" viewBox="0 0 16 16" width="20" fill="currentColor"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path></svg> Continue with GitHub`;
+
 async function connectGitHub() {
     const btn = document.getElementById("btn-gh-connect");
     const err = document.getElementById("gh-err");
     const user = document.getElementById("gh-username").value.trim();
     
     if (!user) { err.textContent = "Please enter a username."; return; }
+
+    // Basic validation: GitHub usernames are alphanumeric + hyphens, 1-39 chars
+    if (!/^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$/.test(user)) {
+        err.textContent = "❌ Invalid GitHub username format.";
+        return;
+    }
     
     btn.innerHTML = `<span class="material-symbols-outlined" style="animation: spin 1s linear infinite; margin-right:8px;">sync</span> Connecting...`;
     btn.disabled = true;
     err.textContent = "";
     
     try {
-        const r = await fetch(`https://api.github.com/users/${user}`);
-        if (!r.ok) throw new Error("User not found on GitHub");
-        const data = await r.json();
-        
-        // Save to vertex_settings
-        const s = loadSettings();
-        s.userName = data.login;
-        s.avatar_url = data.avatar_url;
-        localStorage.setItem(STORE_SET, JSON.stringify(s));
-        
-        applyGitHubUser();
+        const r = await fetch(`https://api.github.com/users/${encodeURIComponent(user)}`);
+
+        if (r.ok) {
+            // Successfully fetched user data from GitHub API
+            const data = await r.json();
+            const s = loadSettings();
+            s.userName = data.login;
+            s.avatar_url = data.avatar_url;
+            localStorage.setItem(STORE_SET, JSON.stringify(s));
+            applyGitHubUser();
+            return;
+        }
+
+        // Handle specific HTTP error codes
+        if (r.status === 403 || r.status === 429) {
+            // Rate limited — fall back to accepting username directly
+            // Build avatar URL from GitHub's convention (works without API)
+            const s = loadSettings();
+            s.userName = user;
+            s.avatar_url = `https://github.com/${encodeURIComponent(user)}.png?size=200`;
+            localStorage.setItem(STORE_SET, JSON.stringify(s));
+            applyGitHubUser();
+            return;
+        }
+
+        if (r.status === 404) {
+            throw new Error("User not found on GitHub. Check the spelling.");
+        }
+
+        throw new Error(`GitHub API returned status ${r.status}. Please try again.`);
+
     } catch(e) {
+        // Network errors (offline, DNS failure, CORS, etc.)
+        if (e instanceof TypeError && e.message.includes("fetch")) {
+            // Network-level failure — allow offline login
+            const s = loadSettings();
+            s.userName = user;
+            s.avatar_url = `https://github.com/${encodeURIComponent(user)}.png?size=200`;
+            localStorage.setItem(STORE_SET, JSON.stringify(s));
+            applyGitHubUser();
+            return;
+        }
         err.textContent = "❌ " + e.message;
-        btn.innerHTML = `<svg height="20" viewBox="0 0 16 16" width="20" fill="currentColor"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path></svg> Continue with GitHub`;
+        btn.innerHTML = GH_BTN_DEFAULT;
         btn.disabled = false;
     }
 }
@@ -299,7 +337,7 @@ async function runCommand(cmd, outElementId) {
         
         let outputHTML = cmdHTML(cmd);
         if (data.returncode === 0) {
-            outputHTML += `<div class="cmd-box" style="color:#55efc4; white-space:pre-wrap; max-height:200px; overflow:auto; margin-top:8px">✅ Success\n${escHTML(data.stdout)}</div>`;
+            outputHTML += `<div class="cmd-box" style="color:#00785f; white-space:pre-wrap; max-height:200px; overflow:auto; margin-top:8px">✅ Success\n${escHTML(data.stdout)}</div>`;
         } else {
             outputHTML += `<div class="cmd-box" style="color:var(--error); white-space:pre-wrap; max-height:200px; overflow:auto; margin-top:8px">❌ Error (Code ${data.returncode})\n${escHTML(data.stderr || data.stdout)}</div>`;
         }
@@ -465,7 +503,7 @@ function saveSetup() {
     };
     localStorage.setItem(STORE_SET, JSON.stringify(s));
     document.getElementById("p-set-out").innerHTML =
-        `<div class="cmd-box" style="color:#55efc4">✅ Settings saved!</div>`;
+        `<div class="cmd-box" style="color:#00785f">✅ Settings saved!</div>`;
 }
 
 function renderHistPanel() {
